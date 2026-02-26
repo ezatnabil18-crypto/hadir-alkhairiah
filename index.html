@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Hadir SMA Al-Khairiah</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+  <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-8 text-center">
+    <h1 class="text-2xl font-bold text-indigo-800 mb-2">E-Hadir Sekolah</h1>
+    <p class="text-slate-400 text-xs mb-6">Sila imbas QR Murid</p>
+
+    <div id="reader" class="overflow-hidden rounded-3xl bg-slate-100 mb-6"></div>
+
+    <div id="status" class="text-sm font-semibold text-indigo-600 animate-pulse hidden">
+      Sedang memproses data...
+    </div>
+  </div>
+
+  <script>
+    // GANTIKAN LINK DI BAWAH DENGAN LINK WEB APP (URL /EXEC) CIKGU
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxqEzJAdFyifXfurrKCRL4NsUGNOnCehh-iH0xPEnGKiaMDviWvpQcCeED84Sp4xnUr8Q/exec";
+
+    const html5QrCode = new Html5Qrcode("reader");
+    
+    const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+
+    // Mulakan kamera secara automatik (GitHub membenarkan ini)
+    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+
+    function onScanSuccess(decodedText) {
+      html5QrCode.pause();
+      document.getElementById('status').classList.remove('hidden');
+
+      // Hantar data ke Google Sheets menggunakan Fetch API
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        mode: "no-cors", // Penting untuk elakkan ralat CORS
+        cache: "no-cache",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: decodedText })
+      })
+      .then(() => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berjaya!',
+          text: 'Data ID ' + decodedText + ' telah direkod.',
+          timer: 2000,
+          showConfirmButton: false
+        }).then(() => {
+          document.getElementById('status').classList.add('hidden');
+          html5QrCode.resume();
+        });
+      })
+      .catch(err => {
+        Swal.fire('Ralat', 'Gagal hantar data. Semak internet.', 'error');
+        html5QrCode.resume();
+      });
+    }
+  </script>
+</body>
+</html>
